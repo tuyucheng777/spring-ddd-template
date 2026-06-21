@@ -3,6 +3,7 @@ package io.github.springdddtemplate.interfaces.exception;
 import io.github.springdddtemplate.domain.exception.BusinessException;
 import io.github.springdddtemplate.domain.exception.ErrorCode;
 import io.github.springdddtemplate.interfaces.response.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 /// Global REST exception handler - part of the DDD Interface layer.
@@ -45,16 +47,35 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
-    /// Handle Spring Validation errors (@Valid failures).
+    /// Handle Spring Validation errors (@Valid failures on @RequestBody).
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
         // Using var + stream pipeline for concise field error aggregation
-        var errors = ex.getBindingResult().getFieldErrors().stream()
+        var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
-        log.warn("Validation error: {}", errors);
-        var response = ApiResponse.<Void>error("VALIDATION_FAILED", errors);
+        log.warn("Validation error: {}", fieldErrors);
+        var response = ApiResponse.<Void>error("VALIDATION_FAILED", fieldErrors);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    /// Handle constraint violations (@Validated failures on @PathVariable, @RequestParam).
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(ConstraintViolationException ex) {
+        var violations = ex.getConstraintViolations().stream()
+                .map(violation -> {
+                    // Extract field name from property path (e.g. "getUser.id" -> "id")
+                    var path = violation.getPropertyPath().toString();
+                    var fieldName = path.contains(".")
+                            ? path.substring(path.lastIndexOf('.') + 1)
+                            : path;
+                    return fieldName + ": " + violation.getMessage();
+                })
+                .collect(Collectors.joining(", "));
+
+        log.warn("Constraint violation: {}", violations);
+        var response = ApiResponse.<Void>error("CONSTRAINT_VIOLATION", violations);
         return ResponseEntity.badRequest().body(response);
     }
 

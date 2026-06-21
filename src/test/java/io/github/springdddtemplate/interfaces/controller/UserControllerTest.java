@@ -144,6 +144,112 @@ class UserControllerTest {
     }
 
     @Nested
+    @DisplayName("Bean Validation Tests")
+    class BeanValidationTests {
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should reject username with special characters")
+        void shouldRejectUsernameWithSpecialChars() throws Exception {
+            var request = new CreateUserRequest("john@doe!", "securePass123", "john@example.com", "MEMBER");
+
+            mockMvc.perform(MockMvcRequestBuilders
+                            .post("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers
+                            .jsonPath("$.errorCode").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should reject username with spaces")
+        void shouldRejectUsernameWithSpaces() throws Exception {
+            var request = new CreateUserRequest("john doe", "securePass123", "john@example.com", "MEMBER");
+
+            mockMvc.perform(MockMvcRequestBuilders
+                            .post("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should reject invalid role")
+        void shouldRejectInvalidRole() throws Exception {
+            var request = new CreateUserRequest("john_doe", "securePass123", "john@example.com", "SUPERUSER");
+
+            mockMvc.perform(MockMvcRequestBuilders
+                            .post("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers
+                            .jsonPath("$.errorCode").value("VALIDATION_FAILED"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should accept case-insensitive role")
+        void shouldAcceptCaseInsensitiveRole() throws Exception {
+            var request = new CreateUserRequest("john_doe", "securePass123", "john@example.com", "admin");
+            var response = new UserResponse(1L, "john_doe", "john@example.com", "Administrator", true);
+
+            when(userApplicationService.createUser(request)).thenReturn(response);
+
+            mockMvc.perform(MockMvcRequestBuilders
+                            .post("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isCreated());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should reject short password")
+        void shouldRejectShortPassword() throws Exception {
+            var request = new CreateUserRequest("john_doe", "short", "john@example.com", "MEMBER");
+
+            mockMvc.perform(MockMvcRequestBuilders
+                            .post("/api/users")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 400 for negative user ID")
+        void shouldReturn400ForNegativeUserId() throws Exception {
+            mockMvc.perform(MockMvcRequestBuilders
+                            .get("/api/users/-1"))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers
+                            .jsonPath("$.errorCode").value("CONSTRAINT_VIOLATION"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Should return 400 for zero user ID")
+        void shouldReturn400ForZeroUserId() throws Exception {
+            mockMvc.perform(MockMvcRequestBuilders
+                            .get("/api/users/0"))
+                    .andExpect(MockMvcResultMatchers
+                            .status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers
+                            .jsonPath("$.errorCode").value("CONSTRAINT_VIOLATION"));
+        }
+    }
+
+    @Nested
     @DisplayName("Authentication Tests")
     class AuthenticationTests {
 

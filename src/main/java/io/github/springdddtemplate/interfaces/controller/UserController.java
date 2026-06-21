@@ -10,8 +10,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "User Management", description = "APIs for managing users")
 public class UserController {
 
@@ -54,7 +57,7 @@ public class UserController {
     })
     public ApiResponse<UserResponse> getUser(
             @Parameter(description = "User ID", example = "1")
-            @PathVariable Long id) {
+            @PathVariable @Positive(message = "User ID must be a positive number") Long id) {
         var response = userApplicationService.getUser(id);
         return ApiResponse.success(response);
     }
@@ -67,7 +70,7 @@ public class UserController {
     })
     public ApiResponse<UserResponse> updateUser(
             @Parameter(description = "User ID", example = "1")
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "User ID must be a positive number") Long id,
             @Valid @RequestBody UpdateUserRequest request) {
         var response = userApplicationService.updateUser(id, request);
         return ApiResponse.success(response);
@@ -82,7 +85,7 @@ public class UserController {
     })
     public ApiResponse<Void> deleteUser(
             @Parameter(description = "User ID", example = "1")
-            @PathVariable Long id) {
+            @PathVariable @Positive(message = "User ID must be a positive number") Long id) {
         userApplicationService.deleteUser(id);
         return ApiResponse.empty();
     }
@@ -91,7 +94,7 @@ public class UserController {
     @Operation(summary = "Activate a user", description = "Activates the user account with the given ID")
     public ApiResponse<UserResponse> activateUser(
             @Parameter(description = "User ID", example = "1")
-            @PathVariable Long id) {
+            @PathVariable @Positive(message = "User ID must be a positive number") Long id) {
         var response = userApplicationService.activateUser(id);
         return ApiResponse.success(response);
     }
@@ -100,7 +103,7 @@ public class UserController {
     @Operation(summary = "Deactivate a user", description = "Deactivates the user account with the given ID")
     public ApiResponse<UserResponse> deactivateUser(
             @Parameter(description = "User ID", example = "1")
-            @PathVariable Long id) {
+            @PathVariable @Positive(message = "User ID must be a positive number") Long id) {
         var response = userApplicationService.deactivateUser(id);
         return ApiResponse.success(response);
     }
