@@ -83,7 +83,7 @@ mvn spring-boot:run
 启动后访问：
 
 - API 文档：http://localhost:8080/swagger-ui.html
-- H2 控制台：http://localhost:8080/h2-console（JDBC URL: `jdbc:h2:mem:ddddb`）
+- H2 控制台：http://localhost:8080/h2-console
 
 ### 测试
 
