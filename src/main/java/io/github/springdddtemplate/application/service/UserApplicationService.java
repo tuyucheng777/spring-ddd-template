@@ -85,7 +85,7 @@ public class UserApplicationService {
     /// Delete a user by ID.
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.findById(id).isPresent()) {
+        if (userRepository.findById(id).isEmpty()) {
             throw BusinessException.notFound("USER_NOT_FOUND", "User not found with id: " + id);
         }
         userRepository.deleteById(id);
