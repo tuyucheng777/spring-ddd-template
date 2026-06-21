@@ -4,7 +4,9 @@ import io.github.springdddtemplate.application.dto.CreateUserRequest;
 import io.github.springdddtemplate.application.dto.UpdateUserRequest;
 import io.github.springdddtemplate.application.dto.UserResponse;
 import io.github.springdddtemplate.application.mapper.UserMapper;
+import io.github.springdddtemplate.domain.event.DomainEvent;
 import io.github.springdddtemplate.domain.exception.BusinessException;
+import io.github.springdddtemplate.domain.publisher.DomainEventPublisher;
 import io.github.springdddtemplate.domain.repository.UserRepository;
 import io.github.springdddtemplate.domain.service.UserDomainService;
 import io.github.springdddtemplate.infrastructure.email.EmailService;
@@ -13,11 +15,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 /// Application service (use case orchestrator) -
 /// coordinates domain objects, infrastructure services, and mappers
 /// to fulfill user management use cases.
 /// Does NOT contain business logic itself - delegates to domain service.
-/// Responsible for: transaction management, DTO mapping, cross-layer coordination.
+/// Responsible for: transaction management, DTO mapping, cross-layer coordination,
+/// and domain event publishing after successful state transitions.
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,8 +33,9 @@ public class UserApplicationService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final DomainEventPublisher eventPublisher;
 
-    /// Create a new user - orchestrates validation, persistence, and notification.
+    /// Create a new user - orchestrates validation, persistence, notification, and event publishing.
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
         // Delegate domain validation
@@ -41,6 +47,10 @@ public class UserApplicationService {
 
         // Persist
         var saved = userRepository.save(user);
+
+        // Publish domain event via DomainEventPublisher (RabbitMQ or logging fallback)
+        eventPublisher.publish(new DomainEvent.UserCreated(
+                saved.getId(), saved.getUsername(), saved.getEmail(), saved.getRole(), Instant.now()));
 
         // Send welcome email (async consideration possible)
         emailService.sendWelcomeEmail(saved.getEmail(), saved.getUsername());
@@ -81,7 +91,7 @@ public class UserApplicationService {
         userRepository.deleteById(id);
     }
 
-    /// Activate a user account.
+    /// Activate a user account - publishes UserActivated event after successful activation.
     @Transactional
     public UserResponse activateUser(Long id) {
         var user = userRepository.findById(id)
@@ -89,10 +99,13 @@ public class UserApplicationService {
                         "User not found with id: " + id));
         user.activate();
         var saved = userRepository.save(user);
+
+        eventPublisher.publish(new DomainEvent.UserActivated(saved.getId(), saved.getUsername(), Instant.now()));
+
         return userMapper.toResponse(saved);
     }
 
-    /// Deactivate a user account.
+    /// Deactivate a user account - publishes UserDeactivated event after successful deactivation.
     @Transactional
     public UserResponse deactivateUser(Long id) {
         var user = userRepository.findById(id)
@@ -100,6 +113,9 @@ public class UserApplicationService {
                         "User not found with id: " + id));
         user.deactivate();
         var saved = userRepository.save(user);
+
+        eventPublisher.publish(new DomainEvent.UserDeactivated(saved.getId(), saved.getUsername(), Instant.now()));
+
         return userMapper.toResponse(saved);
     }
 }

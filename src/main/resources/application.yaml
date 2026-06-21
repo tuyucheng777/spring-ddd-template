@@ -43,6 +43,28 @@ spring:
         filter:
             order: 5
 
+    # Redis Configuration (distributed cache)
+    # Uncomment for production/multi-instance deployments
+    # data:
+    #     redis:
+    #         host: localhost
+    #         port: 6379
+    #         password:
+    #         timeout: 3000ms
+
+    # RabbitMQ Configuration (message queue)
+    # Uncomment for production/event-driven deployments
+    # rabbitmq:
+    #     host: localhost
+    #     port: 5672
+    #     username: guest
+    #     password: guest
+    #     virtual-host: /
+
+    # Cache Configuration
+    cache:
+        type: caffeine  # Use "redis" for distributed caching (requires Redis server)
+
 # Springdoc / Swagger
 springdoc:
     api-docs:
@@ -59,7 +81,37 @@ logging:
         org.hibernate.SQL: DEBUG
         org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# Application custom properties
+# ========================================
+# Application Custom Properties
+# ========================================
 app:
+    # Mail
     mail:
         from: noreply@example.com
+
+    # Scheduling Configuration
+    scheduling:
+        enabled: true
+        cleanup-cron: "0 0 2 * * *"       # Run cleanup at 2 AM daily
+        health-check-interval: 300000       # Health check every 5 minutes (ms)
+
+    # Cache Configuration
+    cache:
+        type: caffeine                      # "caffeine" (local) or "redis" (distributed)
+        default-ttl: 300                    # Default TTL in seconds (5 minutes)
+        max-size: 1000                      # Max entries per cache region
+
+    # Messaging (RabbitMQ) Configuration
+    messaging:
+        enabled: false                      # Set true when RabbitMQ server is available
+        exchange: "ddd.domain.events"       # Topic exchange for domain events
+        queue-prefix: "ddd."                # Queue name prefix
+
+    # Rate Limiting Configuration
+    rate-limit:
+        enabled: true                       # Enable rate limiting filter
+        default-capacity: 100               # Max burst requests per client
+        default-refill-tokens: 10           # Tokens added per refill period
+        default-refill-duration: 1          # Refill period in seconds
+        endpoints:
+            "/api/users": "50,5,1"          # Per-endpoint override: capacity,refillTokens,refillDuration

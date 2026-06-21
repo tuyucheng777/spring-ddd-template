@@ -15,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 /// Configures authentication, authorization, and security filters.
 /// For development: H2 console and Swagger UI are publicly accessible.
 /// For production: tighten these rules and add JWT/Cookie-based auth.
+/// Rate limiting (Bucket4j) operates as a servlet filter BEFORE Spring Security,
+/// so 429 responses are returned without requiring authentication.
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {

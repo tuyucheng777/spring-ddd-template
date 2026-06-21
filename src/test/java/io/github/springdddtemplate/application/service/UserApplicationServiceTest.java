@@ -6,6 +6,7 @@ import io.github.springdddtemplate.application.mapper.UserMapper;
 import io.github.springdddtemplate.domain.exception.BusinessException;
 import io.github.springdddtemplate.domain.exception.ErrorCode;
 import io.github.springdddtemplate.domain.model.entity.User;
+import io.github.springdddtemplate.domain.publisher.DomainEventPublisher;
 import io.github.springdddtemplate.domain.repository.UserRepository;
 import io.github.springdddtemplate.domain.service.UserDomainService;
 import io.github.springdddtemplate.infrastructure.email.EmailService;
@@ -51,6 +52,9 @@ class UserApplicationServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private DomainEventPublisher eventPublisher;
 
     @InjectMocks
     private UserApplicationService userApplicationService;
