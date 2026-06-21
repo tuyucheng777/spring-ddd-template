@@ -1,3 +1,16 @@
+<div align="center">
+  <p><strong>Spring Boot DDD项目模板</strong></p>
+
+  <p>
+    <a href="#"><img src="https://img.shields.io/badge/Java-26-blue.svg" alt="Java Version"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/Maven-3.8+-green.svg" alt="Maven"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/JUnit-5.12.2-orange.svg" alt="JUnit"/></a>
+  </p>
+</div>
+
+
+
 # Spring Boot DDD Template
 
 基于 Spring Boot 4.1 + Java 26 的领域驱动设计（DDD）模板项目，集成了企业级开发常用的基础设施能力。
