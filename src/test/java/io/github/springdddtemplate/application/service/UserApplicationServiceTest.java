@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -114,7 +116,7 @@ class UserApplicationServiceTest {
             var request = new CreateUserRequest("existing_user", "securePass123", "existing@example.com", "MEMBER");
 
             // Mock domain validation to throw
-            org.mockito.Mockito.doThrow(
+            doThrow(
                     BusinessException.business("USER_DUPLICATE_USERNAME", "Username already exists")
             ).when(userDomainService).validateNewUser("existing_user", "existing@example.com", "MEMBER");
 
@@ -122,8 +124,8 @@ class UserApplicationServiceTest {
             assertThrows(BusinessException.class, () -> userApplicationService.createUser(request));
 
             // Verify that no persistence happened after validation failure
-            verify(userRepository, org.mockito.Mockito.never()).save(any());
-            verify(emailService, org.mockito.Mockito.never()).sendWelcomeEmail(any(), any());
+            verify(userRepository, never()).save(any());
+            verify(emailService, never()).sendWelcomeEmail(any(), any());
         }
     }
 
