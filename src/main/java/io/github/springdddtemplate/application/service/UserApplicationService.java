@@ -3,6 +3,7 @@ package io.github.springdddtemplate.application.service;
 import io.github.springdddtemplate.application.dto.CreateUserRequest;
 import io.github.springdddtemplate.application.dto.UpdateUserRequest;
 import io.github.springdddtemplate.application.dto.UserResponse;
+import io.github.springdddtemplate.application.dto.UserResponseV2;
 import io.github.springdddtemplate.application.mapper.UserMapper;
 import io.github.springdddtemplate.domain.event.DomainEvent;
 import io.github.springdddtemplate.domain.exception.BusinessException;
@@ -117,5 +118,51 @@ public class UserApplicationService {
         eventPublisher.publish(new DomainEvent.UserDeactivated(saved.getId(), saved.getUsername(), Instant.now()));
 
         return userMapper.toResponse(saved);
+    }
+
+    // -----------------------------------------------------------------------
+    // V2 use cases — same orchestration logic, richer response payload
+    // -----------------------------------------------------------------------
+
+    /// V2: Create user — identical orchestration to V1, returns enriched V2 DTO.
+    @Transactional
+    public UserResponseV2 createUserV2(CreateUserRequest request) {
+        userDomainService.validateNewUser(request.username(), request.email(), request.role());
+
+        var user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.password()));
+
+        var saved = userRepository.save(user);
+
+        eventPublisher.publish(new DomainEvent.UserCreated(
+                saved.getId(), saved.getUsername(), saved.getEmail(), saved.getRole(), Instant.now()));
+
+        emailService.sendWelcomeEmail(saved.getEmail(), saved.getUsername());
+
+        return userMapper.toResponseV2(saved);
+    }
+
+    /// V2: Get user by ID — returns enriched V2 DTO with displayName and createdAt.
+    public UserResponseV2 getUserV2(Long id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("USER_NOT_FOUND",
+                        "User not found with id: " + id));
+        return userMapper.toResponseV2(user);
+    }
+
+    /// V2: Update user — returns enriched V2 DTO.
+    @Transactional
+    public UserResponseV2 updateUserV2(Long id, UpdateUserRequest request) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("USER_NOT_FOUND",
+                        "User not found with id: " + id));
+
+        userMapper.updateEntityFromRequest(request, user);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.changeEmail(request.email());
+        user.changeRole(request.role());
+
+        var updated = userRepository.save(user);
+        return userMapper.toResponseV2(updated);
     }
 }

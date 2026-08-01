@@ -13,6 +13,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
 
 /// User entity - core domain model.
 /// Uses Lombok for boilerplate reduction while keeping domain logic explicit.
@@ -44,6 +47,10 @@ public class User {
 
     @Column(nullable = false)
     private boolean enabled;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
 
     /// Domain behavior: activate a user account.
     public void activate() {
